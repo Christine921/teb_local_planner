@@ -154,12 +154,32 @@ boost::shared_ptr<g2o::SparseOptimizer> TebOptimalPlanner::initOptimizer()
 
   // allocating the optimizer
   boost::shared_ptr<g2o::SparseOptimizer> optimizer = boost::make_shared<g2o::SparseOptimizer>();
-  TEBLinearSolver* linearSolver = new TEBLinearSolver(); // see typedef in optimization.h
-  linearSolver->setBlockOrdering(true);
-  TEBBlockSolver* blockSolver = new TEBBlockSolver(linearSolver);
-  g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(blockSolver);
+
+  std::unique_ptr<TEBLinearSolver> linear_solver(new TEBLinearSolver()); // see typedef in optimization.h
+  linear_solver->setBlockOrdering(true);
+  std::unique_ptr<TEBBlockSolver> block_solver(new TEBBlockSolver(std::move(linear_solver)));
+  g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(std::move(block_solver));
+
+  // TEBLinearSolver* linearSolver = new TEBLinearSolver(); // see typedef in optimization.h
+  // linearSolver->setBlockOrdering(true);
+  // TEBBlockSolver* blockSolver = new TEBBlockSolver(linearSolver);
+  // g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(blockSolver);
 
   optimizer->setAlgorithm(solver);
+
+  // auto linearSolver = g2o::make_unique<teb_local_planner::TEBLinearSolver>();
+  // auto blockSolver = g2o::make_unique<teb_local_planner::TEBBlockSolver>(std::move(linearSolver));
+  // auto solver = std::make_unique<g2o::OptimizationAlgorithmLevenberg>(std::move(blockSolver));
+  // linearSolver->setBlockOrdering(true);
+  // optimizer->setAlgorithm(solver.get());
+
+  // auto linearSolver = g2o::make_unique<g2o::LinearSolverCSparse<g2o::BlockSolverX::PoseMatrixType>>();
+  // auto blockSolver = g2o::make_unique<g2o::BlockSolverX>(std::move(linearSolver));
+  // auto solver = g2o::make_unique<g2o::OptimizationAlgorithmLevenberg>(std::move(blockSolver));
+  // linearSolver->setBlockOrdering(true);
+  // optimizer->setAlgorithm(solver.get());
+    
+  
   
   optimizer->initMultiThreading(); // required for >Eigen 3.1
   
